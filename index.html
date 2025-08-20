@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>García Electronics - Generador de Facturas</title>
+    <!-- Incluir jsPDF con autoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --success-color: #27ae60;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .language-selector {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+        
+        .language-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .language-btn.active {
+            background: white;
+            color: var(--primary-color);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .logo-img {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: var(--primary-color);
+            padding: 10px;
+            text-align: center;
+            flex-direction: column;
+        }
+        
+        .logo-img .line1 {
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1;
+        }
+        
+        .logo-img .line2 {
+            font-size: 12px;
+            line-height: 1;
+        }
+        
+        .logo-text {
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .tagline {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .invoice-container {
+            padding: 30px;
+        }
+        
+        .client-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+            background: var(--light-color);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .items-table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+        
+        .items-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .items-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .items-table input {
+            border: 1px solid #ddd;
+            background: white;
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        
+        .items-table input:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #219653;
+        }
+        
+        .btn-danger {
+            background: var(--accent-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .totals {
+            background: var(--light-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .totals-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .totals-row:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 18px;
+            color: var(--primary-color);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .client-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .logo-container {
+                flex-direction: column;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            background: var(--success-color);
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .invoice-preview {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 30px;
+            border-radius: 8px;
+            background: white;
+            display: none;
+        }
+        
+        .invoice-preview h3 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        
+        .preview-content {
+            font-family: 'Courier New', monospace;
+            white-space: pre;
+        }
+        
+        .date-info {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="language-selector">
+                <button class="language-btn active" id="spanishBtn">ES</button>
+                <button class="language-btn" id="englishBtn">EN</button>
+            </div>
+            <div class="logo-container">
+                <div class="logo-img">
+                    <div class="line1">GARCIA</div>
+                    <div class="line2">ELECTRONICS</div>
+                </div>
+                <div class="logo-text">
+                    <div class="logo">García Electronics Multiservice</div>
+                    <div class="tagline">Electricity and Cooling Systems</div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="invoice-container">
+            <div class="client-info">
+                <div>
+                    <h3 id="companyInfoTitle">Información de la Empresa</h3>
+                    <div class="form-group">
+                        <label for="companyName" id="companyNameLabel">Nombre de la Empresa</label>
+                        <input type="text" id="companyName" value="García Electronics Multiservice" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="companyAddress" id="companyAddressLabel">Dirección</label>
+                        <input type="text" id="companyAddress" value="123 Main St, Los Angeles, CA" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="companyPhone" id="companyPhoneLabel">Teléfono</label>
+                        <input type="text" id="companyPhone" value="(555) 123-4567" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="companyLicense" id="companyLicenseLabel">N° de Licencia</label>
+                        <input type="text" id="companyLicense" value="CA Contractor #123456" readonly>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 id="clientInfoTitle">Información del Cliente</h3>
+                    <div class="form-group">
+                        <label for="clientName" id="clientNameLabel">Nombre del Cliente *</label>
+                        <input type="text" id="clientName" required placeholder="Ingrese el nombre del cliente">
+                    </div>
+                    <div class="form-group">
+                        <label for="clientPhone" id="clientPhoneLabel">Teléfono</label>
+                        <input type="text" id="clientPhone" placeholder="Ingrese el teléfono">
+                    </div>
+                    <div class="form-group">
+                        <label for="clientAddress" id="clientAddressLabel">Dirección</label>
+                        <input type="text" id="clientAddress" placeholder="Ingrese la dirección">
+                    </div>
+                    <div class="form-group">
+                        <label for="invoiceNumber" id="invoiceNumberLabel">N° de Factura</label>
+                        <input type="text" id="invoiceNumber" value="INV-2023-001">
+                    </div>
+                    <div class="form-group">
+                        <label for="invoiceDate" id="invoiceDateLabel">Fecha</label>
+                        <input type="date" id="invoiceDate">
+                        <div class="date-info" id="dateInfo">La fecha se mostrará correctamente en el PDF</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button type="button" class="btn btn-primary" id="addItem"><span id="addItemText">+ Agregar Ítem</span></button>
+                <button type="button" class="btn btn-success" id="calculateTotals"><span id="calculateText">Calcular Totales</span></button>
+                <button type="button" class="btn btn-primary" id="generatePDF"><span id="generatePdfText">Generar PDF</span></button>
+                <button type="button" class="btn btn-danger" id="resetForm"><span id="resetFormText">Limpiar Formulario</span></button>
+                <button type="button" class="btn btn-success" id="showPreview"><span id="previewText">Vista Previa</span></button>
+            </div>
+            
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th width="10%" id="quantityHeader">Cantidad</th>
+                        <th width="45%" id="descriptionHeader">Descripción</th>
+                        <th width="20%" id="unitPriceHeader">Precio Unitario</th>
+                        <th width="20%" id="totalHeader">Total</th>
+                        <th width="5%"></th>
+                    </tr>
+                </thead>
+                <tbody id="itemsBody">
+                    <tr>
+                        <td><input type="number" class="qty" min="1" value="1"></td>
+                        <td><input type="text" class="desc" placeholder="Descripción del servicio"></td>
+                        <td><input type="number" class="price" min="0" step="0.01" placeholder="0.00"></td>
+                        <td><span class="total">0.00</span></td>
+                        <td><button type="button" class="btn-danger remove-item">X</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="totals">
+                <div class="totals-row">
+                    <span id="subtotalLabel">Subtotal:</span>
+                    <span id="subtotal">$0.00</span>
+                </div>
+                <div class="totals-row">
+                    <span>
+                        <span id="taxLabel">Impuesto</span> (%):
+                        <input type="number" id="taxPercent" value="0" min="0" max="30" style="width: 60px; display: inline-block;">
+                    </span>
+                    <span id="taxAmount">$0.00</span>
+                </div>
+                <div class="totals-row">
+                    <span id="totalLabel">Total:</span>
+                    <span id="totalAmount">$0.00</span>
+                </div>
+            </div>
+            
+            <div class="invoice-preview" id="invoicePreview">
+                <h3 id="previewTitle">Vista Previa de la Factura</h3>
+                <div class="preview-content" id="previewContent"></div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>García Electronics Multiservice &copy; 2023 - <span id="footerText">Especialistas en electricidad, refrigeración y sistemas electrónicos</span></p>
+        </footer>
+    </div>
+
+    <div class="notification" id="notification">PDF generado con éxito!</div>
+
+    <script>
+        // Textos en diferentes idiomas
+        const translations = {
+            es: {
+                companyInfoTitle: "Información de la Empresa",
+                companyNameLabel: "Nombre de la Empresa",
+                companyAddressLabel: "Dirección",
+                companyPhoneLabel: "Teléfono",
+                companyLicenseLabel: "N° de Licencia",
+                clientInfoTitle: "Información del Cliente",
+                clientNameLabel: "Nombre del Cliente *",
+                clientPhoneLabel: "Teléfono",
+                clientAddressLabel: "Dirección",
+                invoiceNumberLabel: "N° de Factura",
+                invoiceDateLabel: "Fecha",
+                quantityHeader: "Cantidad",
+                descriptionHeader: "Descripción",
+                unitPriceHeader: "Precio Unitario",
+                totalHeader: "Total",
+                addItemText: "+ Agregar Ítem",
+                calculateText: "Calcular Totales",
+                generatePdfText: "Generar PDF",
+                resetFormText: "Limpiar Formulario",
+                previewText: "Vista Previa",
+                subtotalLabel: "Subtotal:",
+                taxLabel: "Impuesto",
+                totalLabel: "Total:",
+                previewTitle: "Vista Previa de la Factura",
+                footerText: "Especialistas en electricidad, refrigeración y sistemas electrónicos",
+                invoice: "FACTURA",
+                client: "CLIENTE",
+                name: "Nombre",
+                phone: "Teléfono",
+                address: "Dirección",
+                thanks: "¡Gracias por su preferencia!",
+                invoiceNum: "N°",
+                date: "Fecha",
+                subtotalPdf: "Subtotal:",
+                taxPdf: "Impuesto:",
+                totalPdf: "TOTAL:",
+                dateInfo: "La fecha se mostrará correctamente en el PDF"
+            },
+            en: {
+                companyInfoTitle: "Company Information",
+                companyNameLabel: "Company Name",
+                companyAddressLabel: "Address",
+                companyPhoneLabel: "Phone",
+                companyLicenseLabel: "License Number",
+                clientInfoTitle: "Client Information",
+                clientNameLabel: "Client Name *",
+                clientPhoneLabel: "Phone",
+                clientAddressLabel: "Address",
+                invoiceNumberLabel: "Invoice Number",
+                invoiceDateLabel: "Date",
+                quantityHeader: "Quantity",
+                descriptionHeader: "Description",
+                unitPriceHeader: "Unit Price",
+                totalHeader: "Total",
+                addItemText: "+ Add Item",
+                calculateText: "Calculate Totals",
+                generatePdfText: "Generate PDF",
+                resetFormText: "Clear Form",
+                previewText: "Preview",
+                subtotalLabel: "Subtotal:",
+                taxLabel: "Tax",
+                totalLabel: "Total:",
+                previewTitle: "Invoice Preview",
+                footerText: "Specialists in electricity, cooling and electronic systems",
+                invoice: "INVOICE",
+                client: "CLIENT",
+                name: "Name",
+                phone: "Phone",
+                address: "Address",
+                thanks: "Thank you for your business!",
+                invoiceNum: "No.",
+                date: "Date",
+                subtotalPdf: "Subtotal:",
+                taxPdf: "Tax:",
+                totalPdf: "TOTAL:",
+                dateInfo: "Date will be displayed correctly in PDF"
+            }
+        };
+
+        let currentLanguage = 'es';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Establecer fecha actual por defecto (manejo correcto de zona horaria)
+            const today = new Date();
+            const timezoneOffset = today.getTimezoneOffset() * 60000; // offset in milliseconds
+            const localISOTime = new Date(today - timezoneOffset).toISOString().split('T')[0];
+            document.getElementById('invoiceDate').value = localISOTime;
+            
+            // Generar número de factura automático
+            generateInvoiceNumber();
+            
+            // Configurar botones de idioma
+            document.getElementById('spanishBtn').addEventListener('click', function() {
+                setLanguage('es');
+            });
+            
+            document.getElementById('englishBtn').addEventListener('click', function() {
+                setLanguage('en');
+            });
+            
+            // Contador de items
+            let itemCount = 1;
+            
+            // Agregar nuevo item
+            document.getElementById('addItem').addEventListener('click', function() {
+                itemCount++;
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td><input type="number" class="qty" min="1" value="1"></td>
+                    <td><input type="text" class="desc" placeholder="${currentLanguage === 'es' ? 'Descripción del servicio' : 'Service description'}"></td>
+                    <td><input type="number" class="price" min="0" step="0.01" placeholder="0.00"></td>
+                    <td><span class="total">0.00</span></td>
+                    <td><button type="button" class="btn-danger remove-item">X</button></td>
+                `;
+                document.getElementById('itemsBody').appendChild(newRow);
+                
+                // Agregar event listeners a los nuevos inputs
+                attachEventListenersToRow(newRow);
+            });
+            
+            // Función para cambiar idioma
+            function setLanguage(lang) {
+                currentLanguage = lang;
+                
+                // Actualizar textos de la interfaz
+                for (const [key, value] of Object.entries(translations[lang])) {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        if (element.tagName === 'INPUT' && element.placeholder) {
+                            // Manejar placeholders
+                            if (key === 'clientNameLabel') {
+                                document.getElementById('clientName').placeholder = lang === 'es' ? 
+                                    'Ingrese el nombre del cliente' : 'Enter client name';
+                            }
+                        } else if (element.tagName === 'SPAN') {
+                            element.textContent = value;
+                        } else {
+                            element.textContent = value;
+                        }
+                    }
+                }
+                
+                // Actualizar botones de idioma
+                document.getElementById('spanishBtn').classList.toggle('active', lang === 'es');
+                document.getElementById('englishBtn').classList.toggle('active', lang === 'en');
+                
+                // Actualizar placeholders de items
+                document.querySelectorAll('.desc').forEach(input => {
+                    input.placeholder = lang === 'es' ? 'Descripción del servicio' : 'Service description';
+                });
+            }
+            
+            // Función para generar número de factura
+            function generateInvoiceNumber() {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const random = Math.floor(Math.random() * 1000);
+                document.getElementById('invoiceNumber').value = `INV-${year}${month}${day}-${random}`;
+            }
+            
+            // Función para agregar event listeners a una fila
+            function attachEventListenersToRow(row) {
+                const qtyInput = row.querySelector('.qty');
+                const priceInput = row.querySelector('.price');
+                
+                qtyInput.addEventListener('input', calculateRowTotal);
+                priceInput.addEventListener('input', calculateRowTotal);
+                
+                // Eliminar fila
+                row.querySelector('.remove-item').addEventListener('click', function() {
+                    if (document.getElementById('itemsBody').children.length > 1) {
+                        row.remove();
+                        calculateTotals();
+                    } else {
+                        alert(currentLanguage === 'es' ? 
+                            'Debe haber al menos un item en la factura.' : 
+                            'There must be at least one item on the invoice.');
+                    }
+                });
+            }
+            
+            // Calcular total por fila
+            function calculateRowTotal() {
+                const row = this.closest('tr');
+                const qty = parseFloat(row.querySelector('.qty').value) || 0;
+                const price = parseFloat(row.querySelector('.price').value) || 0;
+                const total = qty * price;
+                
+                row.querySelector('.total').textContent = total.toFixed(2);
+                calculateTotals();
+            }
+            
+            // Calcular totales generales
+            function calculateTotals() {
+                let subtotal = 0;
+                document.querySelectorAll('.total').forEach(function(el) {
+                    subtotal += parseFloat(el.textContent) || 0;
+                });
+                
+                const taxPercent = parseFloat(document.getElementById('taxPercent').value) || 0;
+                const taxAmount = subtotal * (taxPercent / 100);
+                const totalAmount = subtotal + taxAmount;
+                
+                document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+                document.getElementById('taxAmount').textContent = '$' + taxAmount.toFixed(2);
+                document.getElementById('totalAmount').textContent = '$' + totalAmount.toFixed(2);
+            }
+            
+            // Mostrar notificación
+            function showNotification(message) {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+            
+            // Agregar event listeners a las filas existentes
+            document.querySelectorAll('#itemsBody tr').forEach(function(row) {
+                attachEventListenersToRow(row);
+            });
+            
+            // Calcular totales al cambiar el porcentaje de impuesto
+            document.getElementById('taxPercent').addEventListener('input', calculateTotals);
+            
+            // Botón para calcular totales
+            document.getElementById('calculateTotals').addEventListener('click', calculateTotals);
+            
+            // Vista previa
+            document.getElementById('showPreview').addEventListener('click', function() {
+                const previewContent = document.getElementById('previewContent');
+                const preview = generatePreview();
+                previewContent.textContent = preview;
+                document.getElementById('invoicePreview').style.display = 'block';
+            });
+            
+            // Generar vista previa
+            function generatePreview() {
+                const companyName = document.getElementById('companyName').value;
+                const companyAddress = document.getElementById('companyAddress').value;
+                const companyPhone = document.getElementById('companyPhone').value;
+                const companyLicense = document.getElementById('companyLicense').value;
+                const clientName = document.getElementById('clientName').value || "__________";
+                const clientPhone = document.getElementById('clientPhone').value || "__________";
+                const clientAddress = document.getElementById('clientAddress').value || "__________";
+                const invoiceNumber = document.getElementById('invoiceNumber').value;
+                const invoiceDate = formatDate(document.getElementById('invoiceDate').value);
+                const subtotal = document.getElementById('subtotal').textContent;
+                const taxAmount = document.getElementById('taxAmount').textContent;
+                const totalAmount = document.getElementById('totalAmount').textContent;
+                
+                let preview = `${companyName.toUpperCase()}\n`;
+                preview += `${companyAddress}\n`;
+                preview += `${currentLanguage === 'es' ? 'Tel: ' : 'Phone: '}${companyPhone} | ${currentLanguage === 'es' ? 'Licencia: ' : 'License: '}${companyLicense}\n`;
+                preview += "----------------------------------------\n";
+                preview += `${translations[currentLanguage].invoice}\n`;
+                preview += `${translations[currentLanguage].invoiceNum}: ${invoiceNumber}\n`;
+                preview += `${translations[currentLanguage].date}: ${invoiceDate}\n`;
+                preview += "----------------------------------------\n";
+                preview += `${translations[currentLanguage].client}:\n`;
+                preview += `${translations[currentLanguage].name}: ${clientName}\n`;
+                preview += `${translations[currentLanguage].phone}: ${clientPhone}\n`;
+                preview += `${translations[currentLanguage].address}: ${clientAddress}\n`;
+                preview += "----------------------------------------\n";
+                
+                // Items
+                preview += `| ${translations[currentLanguage].quantityHeader} | ${translations[currentLanguage].descriptionHeader} | ${translations[currentLanguage].unitPriceHeader} | ${translations[currentLanguage].totalHeader}    |\n`;
+                
+                document.querySelectorAll('#itemsBody tr').forEach(function(row) {
+                    const qty = row.querySelector('.qty').value || "1";
+                    const desc = row.querySelector('.desc').value || "__________";
+                    const price = row.querySelector('.price').value || "0.00";
+                    const total = row.querySelector('.total').textContent || "0.00";
+                    
+                    if (desc && desc.trim() !== '') {
+                        preview += `| ${qty}   | ${desc}    | $${price}    | $${total}    |\n`;
+                    }
+                });
+                
+                preview += "----------------------------------------\n";
+                preview += `${translations[currentLanguage].subtotalPdf}    ${subtotal}\n`;
+                preview += `${translations[currentLanguage].taxPdf}    ${taxAmount}\n`;
+                preview += `${translations[currentLanguage].totalPdf}    ${totalAmount}\n`;
+                
+                return preview;
+            }
+            
+            // Limpiar formulario
+            document.getElementById('resetForm').addEventListener('click', function() {
+                if (confirm(currentLanguage === 'es' ? 
+                    '¿Estás seguro de que deseas limpiar el formulario? Se perderán todos los datos.' : 
+                    'Are you sure you want to clear the form? All data will be lost.')) {
+                    document.getElementById('clientName').value = '';
+                    document.getElementById('clientPhone').value = '';
+                    document.getElementById('clientAddress').value = '';
+                    generateInvoiceNumber();
+                    
+                    // Establecer fecha actual por defecto (manejo correcto de zona horaria)
+                    const today = new Date();
+                    const timezoneOffset = today.getTimezoneOffset() * 60000;
+                    const localISOTime = new Date(today - timezoneOffset).toISOString().split('T')[0];
+                    document.getElementById('invoiceDate').value = localISOTime;
+                    
+                    // Limpiar items
+                    const itemsBody = document.getElementById('itemsBody');
+                    while (itemsBody.firstChild) {
+                        itemsBody.removeChild(itemsBody.firstChild);
+                    }
+                    
+                    // Agregar una fila vacía
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td><input type="number" class="qty" min="1" value="1"></td>
+                        <td><input type="text" class="desc" placeholder="${currentLanguage === 'es' ? 'Descripción del servicio' : 'Service description'}"></td>
+                        <td><input type="number" class="price" min="0" step="0.01" placeholder="0.00"></td>
+                        <td><span class="total">0.00</span></td>
+                        <td><button type="button" class="btn-danger remove-item">X</button></td>
+                    `;
+                    itemsBody.appendChild(newRow);
+                    attachEventListenersToRow(newRow);
+                    
+                    // Resetear totales
+                    document.getElementById('taxPercent').value = 0;
+                    calculateTotals();
+                    
+                    // Ocultar vista previa
+                    document.getElementById('invoicePreview').style.display = 'none';
+                    
+                    showNotification(currentLanguage === 'es' ? 
+                        'Formulario limpiado correctamente' : 'Form cleared successfully');
+                }
+            });
+            
+            // Generar PDF
+            document.getElementById('generatePDF').addEventListener('click', function() {
+                // Validar datos básicos
+                const clientName = document.getElementById('clientName').value;
+                if (!clientName) {
+                    alert(currentLanguage === 'es' ? 
+                        'Por favor, ingrese el nombre del cliente.' : 
+                        'Please enter the client name.');
+                    return;
+                }
+                
+                // Validar items
+                let hasItems = false;
+                document.querySelectorAll('#itemsBody tr').forEach(function(row) {
+                    const desc = row.querySelector('.desc').value;
+                    if (desc && desc.trim() !== '') {
+                        hasItems = true;
+                    }
+                });
+                
+                if (!hasItems) {
+                    alert(currentLanguage === 'es' ? 
+                        'Por favor, agregue al menos un item con descripción.' : 
+                        'Please add at least one item with description.');
+                    return;
+                }
+                
+                // Usar jsPDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Agregar contenido al PDF
+                const invoiceNumber = document.getElementById('invoiceNumber').value;
+                const invoiceDate = document.getElementById('invoiceDate').value;
+                const companyName = document.getElementById('companyName').value;
+                const companyAddress = document.getElementById('companyAddress').value;
+                const companyPhone = document.getElementById('companyPhone').value;
+                const companyLicense = document.getElementById('companyLicense').value;
+                const clientPhone = document.getElementById('clientPhone').value;
+                const clientAddress = document.getElementById('clientAddress').value;
+                const subtotal = document.getElementById('subtotal').textContent;
+                const taxAmount = document.getElementById('taxAmount').textContent;
+                const totalAmount = document.getElementById('totalAmount').textContent;
+                
+                // Crear logo con texto
+                /*doc.setFillColor(44, 62, 80);
+                doc.rect(15, 15, 30, 15, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text("GARCIA", 30, 21, { align: 'center' });
+                doc.text("ELECTRONICS", 30, 27, { align: 'center' });*/
+                
+                // Restaurar color del texto
+                doc.setTextColor(0, 0, 0);
+                
+                // Encabezado
+                doc.setFontSize(20);
+                doc.setFont(undefined, 'bold');
+                doc.text(companyName, 105, 20, { align: 'center' });
+                
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'normal');
+                doc.text(companyAddress, 105, 28, { align: 'center' });
+                doc.text(`${currentLanguage === 'es' ? 'Tel: ' : 'Phone: '}${companyPhone} | ${currentLanguage === 'es' ? 'Licencia: ' : 'License: '}${companyLicense}`, 105, 35, { align: 'center' });
+                
+                // Línea separadora
+                doc.line(15, 42, 195, 42);
+                
+                // Información de la factura
+                doc.setFontSize(16);
+                doc.setFont(undefined, 'bold');
+                doc.text(translations[currentLanguage].invoice, 105, 52, { align: 'center' });
+                
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+                doc.text(`${translations[currentLanguage].invoiceNum}: ${invoiceNumber}`, 160, 48);
+                
+                // Formatear fecha correctamente para el PDF (sin problemas de zona horaria)
+                const selectedDate = new Date(document.getElementById('invoiceDate').value);
+                const formattedDate = formatDateForPdf(selectedDate);
+                doc.text(`${translations[currentLanguage].date}: ${formattedDate}`, 160, 54);
+                
+                // Información del cliente
+                doc.setFont(undefined, 'bold');
+                doc.text(`${translations[currentLanguage].client}:`, 20, 48);
+                doc.setFont(undefined, 'normal');
+                doc.text(`${translations[currentLanguage].name}: ${clientName}`, 20, 54);
+                if (clientPhone) doc.text(`${translations[currentLanguage].phone}: ${clientPhone}`, 20, 60);
+                if (clientAddress) doc.text(`${translations[currentLanguage].address}: ${clientAddress}`, 20, 66);
+                
+                // Línea separadora
+                doc.line(15, 72, 195, 72);
+                
+                // Tabla de items
+                const tableColumn = [
+                    translations[currentLanguage].quantityHeader,
+                    translations[currentLanguage].descriptionHeader,
+                    translations[currentLanguage].unitPriceHeader,
+                    translations[currentLanguage].totalHeader
+                ];
+                const tableRows = [];
+                
+                document.querySelectorAll('#itemsBody tr').forEach(function(row) {
+                    const qty = row.querySelector('.qty').value;
+                    const desc = row.querySelector('.desc').value;
+                    const price = parseFloat(row.querySelector('.price').value) || 0;
+                    const total = parseFloat(row.querySelector('.total').textContent) || 0;
+                    
+                    if (desc && desc.trim() !== '') {
+                        tableRows.push([
+                            qty, 
+                            desc, 
+                            `$${price.toFixed(2)}`, 
+                            `$${total.toFixed(2)}`
+                        ]);
+                    }
+                });
+                
+                // Agregar totales
+                tableRows.push(["", "", `${translations[currentLanguage].subtotalPdf}`, subtotal]);
+                tableRows.push(["", "", `${translations[currentLanguage].taxPdf}`, taxAmount]);
+                tableRows.push(["", "", `${translations[currentLanguage].totalPdf}`, totalAmount]);
+                
+                // Generar tabla
+                doc.autoTable({
+                    startY: 78,
+                    head: [tableColumn],
+                    body: tableRows,
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: [44, 62, 80],
+                        textColor: [255, 255, 255],
+                        fontStyle: 'bold'
+                    },
+                    styles: {
+                        fontSize: 10,
+                        cellPadding: 3
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 20 },
+                        1: { cellWidth: 'auto' },
+                        2: { cellWidth: 30 },
+                        3: { cellWidth: 30 }
+                    },
+                    margin: { left: 15, right: 15 },
+                    didDrawPage: function(data) {
+                        // Pie de página
+                        doc.setFontSize(10);
+                        doc.text(translations[currentLanguage].thanks, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+                    }
+                });
+                
+                // Guardar PDF
+                doc.save(`invoice_${invoiceNumber}_${clientName.replace(/\s+/g, '_')}.pdf`);
+                showNotification(currentLanguage === 'es' ? 
+                    'PDF generado con éxito!' : 'PDF generated successfully!');
+            });
+            
+            // Función para formatear fecha para vista previa
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                if (currentLanguage === 'es') {
+                    return date.toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                } else {
+                    return date.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                }
+            }
+            
+            // Función para formatear fecha para PDF (manejo correcto de zona horaria)
+            function formatDateForPdf(date) {
+                // Ajustar por zona horaria
+                const timezoneOffset = date.getTimezoneOffset() * 60000;
+                const adjustedDate = new Date(date.getTime() + timezoneOffset);
+                
+                if (currentLanguage === 'es') {
+                    return adjustedDate.toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                } else {
+                    return adjustedDate.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                }
+            }
+            
+            // Calcular totales iniciales
+            calculateTotals();
+        });
+    </script>
+</body>
+</html>
